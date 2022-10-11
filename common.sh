@@ -25,62 +25,36 @@ log_success() {
  printf "${GREEN}✔ %s${NORMAL}\n" "$@" >&2 
  suite=`echo "${0##*/}"  | sed 's/.sh//g'`
  #using a semicolon as a delimeter for reporting
- echo ""$suite"; PASS; "$@";">> output/test-results.txt
+ echo ""$suite"; PASS; "$@";">> test-results.txt
 }
 
 log_failure() {
  printf "${RED}❌ %s${NORMAL}\n" "$@" >&2 
  suite=`echo "${0##*/}"  | sed 's/.sh//g'`
  #using a semicolon as a delimeter for reporting
- echo ""$suite"; FAIL; "$@";">> output/test-results.txt
+ echo ""$suite"; FAIL; "$@";">> test-results.txt
 }
 
 read_parameters() {
-    echo "reading in $1 "
-    IFS=$'\r\n' command eval 'results=($(cat $1))'
+    echo "reading in $comp_val "
+    IFS=$'\r\n' command eval 'results=($(cat $comp_val))'
 }
 
-not_empty() {
-    count=0
-    # count the amount of lines logged
-    if [[ -z $1 ]]; then
-        log_failure "$1 log is empty"
-        echo "FAIL "
-        TEST_CHECK=${TEST_CHECK+1}
-    else 
-        log_success "$1 log was populated"
-        echo -e "\n"
-    fi        
-}
 
-logging_test() {
+compliance_test() {
 
-    echo "check $1 exists"
+    echo "checking if ${results[@]} exists"
     check=0    
     for i in "${results[@]}"
         do
-            if [[ "$i" == *"$1"* ]]; then
-                echo "$i"
-                log_success "$1 was found at $i"
-                echo -e "\n" 
-                check=$((check+1))       
+            echo $i
+            if grep -Fq "$i" $index_file; then
+                echo "found $i"
+                log_success "$i was found"
+            else 
+                log_failure "$i was not found in $index_file"
+                echo "FAIL "        
+                TEST_CHECK=${TEST_CHECK+1}
             fi
         done
-    if [[ "$check" -eq "0" ]]; then
-        log_failure "$1 was not in found"
-        echo "FAIL "        
-        TEST_CHECK=${TEST_CHECK+1}
-    fi
-}
-
-check_files() {
-
-    echo "Verify $1 exists"
-    if [[ grep –Fx "$1" "$results" ]]; then
-        log_success "$1 was found"
-    else
-        log_failure "$1 was not found"
-        echo "FAIL "        
-        TEST_CHECK=${TEST_CHECK+1}
-    fi
 }
