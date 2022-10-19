@@ -1,0 +1,63 @@
+workflow:
+    # Monitor branches and MR
+    rules:
+        - if: $CI_OPEN_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" && $CI_PIPELINE_SOURCE == "merge_request_event"
+        - if: $CI_PIPELINE_SOURCE== "merge_request_event"
+        - if: $CI_COMMIT_BRANCH && $CI_BRANCH && $CI_OPEN_MERGE_REQUESTS
+          when: never
+        - if: $CI_COMMIT_BRANCH
+
+stages:
+    - jenkins
+    - istio
+
+config_security:
+    image: $CI_REGISTRY/ubi8:latest
+    stage: jenkins
+    before_script: 
+        |
+        yum install net-tools curl git -y        
+    script:
+        |
+        chmod +x scripts/compliance.sh
+        ./scripts/compliance.sh output.html jenkins/policy/config_security.txt configureSecurity/ "Limit Roles based access"
+    artifacts:
+        paths: 
+            - results/*.txt
+
+limit_role:
+    image: $CI_REGISTRY/ubi8:latest
+    stage: jenkins
+    before_script: 
+        |
+        yum install net-tools curl git -y        
+    script:
+        |
+        chmod +x scripts/compliance.sh
+        ./scripts/compliance.sh limit_role.html jenkins/policy/limit_role.txt role-strategy/manage-roles "Limit Global Roles"
+        
+        chmod +x scripts/neg_compliance.sh
+        ./scripts/compliance.sh neg_limit_role.html jenkins/policy/neg_limit_roles.txt role-strategy/manage-roles "Negative Global Roles Test"
+
+    artifacts:
+        paths: 
+            - results/*.txt
+
+#MANUAL job need to set $BASTION and $JENKINS_SERVER variables based on GDEV IP
+disable_build:
+    image: $CI_REGISTRY/ubi8:latest
+    stage: jenkins
+    before_script: 
+        |
+        ssh-keygen -t rsa -N "" -f tester
+    script:
+        |
+        chmod +x scripts/server_compliance.sh
+        ./scripts/server_compliance.sh "/app/jenkins/jenkins/secrets" "700" "Disable Builds within built-in Node"
+   # when: manual
+    artifacts:
+        paths: 
+            - results/*.txt
+
+
+
