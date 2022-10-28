@@ -3,10 +3,11 @@
 set -e
 set -o pipefail
 
-source common.sh
+source scripts/common.sh
 
 index_file=${1:-""}
 comp_val=${2:-0}
+
 TEST_CHECK=0
 
 main() {
@@ -15,7 +16,7 @@ main() {
         rm test-results.txt
     fi
     read_parameters 
-
+    log_header "Configure Security"
     echo "Check for Keycloak Role Base"
     compliance_test 
 
