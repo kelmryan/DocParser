@@ -1,0 +1,1 @@
+<input onclick="javascript:updateOptionalBlock(this,true)" name="_.usageStatisticsCollected" type="checkbox" class="optional-block-control block-control  ">
